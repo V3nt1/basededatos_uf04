@@ -1,0 +1,81 @@
+<html>
+<head>
+<meta charset="UTF-8" />
+<title>ENTI Chat</title>
+</head>
+<body>
+<form id="formulario">
+<p><input type="text" name="user" id="usuario" placeholder="Nombre de usuario"/>
+<input type="text" name="msg" id="mensaje" placeholder="Mensaje" /><button>Enviar</button></p>
+</form>
+<div id="chat">
+<ul id="mensajes-chat">
+</ul>
+</div>
+
+<script>
+let last_date = 0;
+
+function print_chat (data){
+	let lista = '';
+	for (let i = 0; i < data.length; i++){
+
+		lista += "<li>"+data[i].user+": "+data[i].msg+"</li>";
+	}
+
+	document.getElementById("mensajes-chat").innerHTML += lista;
+}
+
+
+function set_last (data) {
+	last_date = data[data.length-1].date;
+}
+
+
+
+document.getElementById("formulario").addEventListener('submit', e => {
+  e.preventDefault();
+    
+	let user = document.getElementById("usuario").value;
+	let msg = document.getElementById("mensaje").value;
+	document.getElementById("mensaje").value = "";
+	document.getElementById("mensaje").focus();
+    
+	fetch("/submit", {
+        method: "POST",
+		headers: {
+            'Content-Type': 'text/json'
+		},
+		body: JSON.stringify({
+            chat_user: user,
+			chat_msg: msg
+		})
+	});
+    
+});
+
+fetch("/recent")
+.then( response => response.json() )
+.then( data => {
+    print_chat(data);
+    set_last(data);
+});
+
+
+const refresh_time = 500;
+setInterval(() => {
+	fetch("/chat?last="+last_date)
+			.then( response => response.json() )
+			.then( data => {
+				if (data.length == 0)
+					return;
+
+				print_chat(data);
+				set_last(data);
+			});
+
+}, refresh_time);
+
+</script>
+</body>
+</html>
